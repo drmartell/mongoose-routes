@@ -10,7 +10,6 @@ Tweet.create([...Array(10000)].map(() => ({
 })))
   .then(() => console.log('done'));
 
-
 async function allCrudMethods() {
   // C - POST
   const createdTweet = await Tweet.create({
