@@ -4,16 +4,27 @@ const app = require('../lib/app');
 require('../lib/utils/connect')();
 
 describe('application routes', () => {
-  it('has a home route that says hello everyone', () => {
-    return request(app)
-      .get('/')
+  it('has a home route that displays a welcome message', () => 
+    request(app).get('/')
+      .then(res => expect(res.text).toEqual('Welcome to the cars database'))
+  );
+
+  it('has a home api route that returns all cars', () =>
+    request(app).get('/api/cars')
       .then(res => {
         expect(res.body).toEqual({ text: 'hello' });
-      });
-  });
+      })
+  );
 
-  it('has a /hello post route', () => {
-    return request(app)
+  it('has a route to get car by id', () => 
+    request(app).get('/api/cars/:id')
+      .then(res => {
+        expect(res.body)
+      })
+  ); 
+
+  it('has a /hello post route', () => 
+    request(app)
       .post('/hello')
       .send({
         name: 'spot',
@@ -26,6 +37,6 @@ describe('application routes', () => {
           age: 5,
           weight: '20 lbs'
         });
-      });
-  });
+      })
+  );
 });
