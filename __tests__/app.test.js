@@ -10,7 +10,7 @@ describe('application routes', () => {
     request(app).get('/')
       .then(res => expect(res.text).toEqual('Welcome to the cars database'))
   );
-
+  
   it('has a POST route to add a car to the database', () => 
     request(app).post('/api/post')
       .send({
@@ -39,7 +39,27 @@ describe('application routes', () => {
   );
 
   it('has a PUT route to update a car by id', () =>
-    request(app).get(`/api/put/${testCar._id}`)
-      .then(res => expect(res.body._id).toEqual(testCar._id))
+    request(app).put(`/api/put/${testCar._id}`)
+      .send({
+        make: 'FORD',
+      })
+      .then(res => { expect(res.body._id).toEqual(testCar._id);
+        console.log('res.body', res.body);
+        // get the id for additional testing below
+        testCar._id = res.body._id;
+        console.log('ln 50ish - testCar._id', testCar._id);
+        // console.log('testCar._id', testCar._id);
+      })
   );
 });
+
+// describe('application routes - delete', () => {
+//   it('has a DELETE route that deletes by id', () => 
+//     request(app).delete(`/api/delete/${testCar._id}`)
+//       //.then(res => expect(res.body).toEqual(expect.any(Object)))
+//       .then(res => {
+//         console.log('line 61ish - res.body', res.body);
+//         expect(res.body._id).toEqual(testCar._id);
+//       })
+//   );
+// });
