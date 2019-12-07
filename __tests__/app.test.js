@@ -1,8 +1,8 @@
 require('dotenv').config();
 const request = require('supertest');
 const app = require('../lib/app');
-require('../lib/utils/connect')();
-
+require('../lib/utils/connect').connect();
+const disconnect = require('../lib/utils/connect').disconnect;
 const testCar = {};
 
 describe('application routes', () => {
@@ -51,4 +51,8 @@ describe('application routes', () => {
     .del(`/api/delete/${testCar._id}`)
     .then(res => { expect(res.body._id).toEqual(testCar._id); done(); })
   );
+});
+
+afterAll(() => {
+  disconnect();
 });
