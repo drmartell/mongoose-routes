@@ -1,11 +1,26 @@
 require('dotenv').config();
-//const request = require('supertest');
-//const app = require('../lib/app');
 const server = require('../server');
-require('../lib/utils/connect').connect();
+const connect = require('../lib/utils/connect').connect;
 const disconnect = require('../lib/utils/connect').disconnect;
 
 const testCar = {};
+
+// Start application before running the test case
+beforeAll(async(done) => {
+  await connect();
+  server.events.on('start', () => {
+    done();
+  });
+});
+
+// Stop application after running the test case
+afterAll(async(done) => {
+  await disconnect();
+  server.events.on('stop', () => {
+    done();
+  });
+  server.stop();
+});
 
 describe('application routes', () => {
   it('has a home GET route that displays a welcome message', async() => {
@@ -13,52 +28,77 @@ describe('application routes', () => {
       method: 'GET',
       url: '/'
     };
-    let res = await server.inject(injectOptions);
-    res = await JSON.parse(res);
-    expect(res.text).toEqual('Welcome to the cars database');
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    expect(data.result).toBe('Welcome to the cars database');
   });
 
-  it.skip('has a POST route to add a car to the database', () => request(server)
-    .post('/api/post')
-    .send({
-      make: 'Ford',
-      model: 'Fiesta',
-      year: 2021
-    })
-    .then(res => { expect(res.body).toEqual(expect.objectContaining({
+  it('has a POST route to add a car to the database', async() => {
+    const injectOptions = {
+      method: 'POST',
+      url: '/api/post',
+      payload: JSON.stringify({
+        make: 'Ford',
+        model: 'Fiesta',
+        year: 2021
+      })
+    };
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    const payload = await JSON.parse(data.payload);
+    expect(payload).toEqual(expect.objectContaining({
       make: 'Ford',
       model: 'Fiesta',
       year: 2021
     }));
+
     // store the id for additional testing below
-    testCar._id = res.body._id;
-    })
-  );
+    testCar._id = payload._id;
+  });
 
-  it.skip('has a GET route that returns all cars', () => request(server)
-    .get('/api/cars')
-    .then(res => expect(res.body).toEqual(expect.any(Array)))
-  );
+  it('has a GET route that returns all cars', async() => {
+    const injectOptions = {
+      method: 'GET',
+      url: '/api/cars'
+    };
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    const payload = await JSON.parse(data.payload);
+    expect(payload).toEqual(expect.any(Array));
+  });
 
-  it.skip('has a GET route that gets a car by id', () => request(server)
-    .get(`/api/cars/${testCar._id}`)
-    .then(res => expect(res.body).toEqual(expect.any(Object)))
-  );
+  it('has a GET route that gets a car by id', async() => {
+    const injectOptions = {
+      method: 'GET',
+      url: `/api/cars/${testCar._id}`
+    };
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    const payload = await JSON.parse(data.payload);
+    expect(payload).toEqual(expect.any(Object));
+  });
 
-  it.skip('has a PUT route that updates a car by id', () => request(server)
-    .put(`/api/put/${testCar._id}`)
-    .send({
-      make: 'FORD',
-    })
-    .then(res => expect(res.body._id).toEqual(testCar._id))
-  );
+  it('has a PATCH route that updates a car by id', async() => {
+    const injectOptions = {
+      method: 'PATCH',
+      url: `/api/patch/${testCar._id}`,
+      payload: JSON.stringify({ make: 'FORD' })
+    };
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    const payload = await JSON.parse(data.payload);
+    expect(payload.make).toEqual('FORD');
+  });
 
-  // it('has a DELETE route that deletes by id', () => request(app)
-  //   .del(`/api/delete/${testCar._id}`)
-  //   .then(res => expect(res.body._id).toEqual(testCar._id))
-  // );
-});
-
-afterAll(() => {
-  disconnect();
+  it('has a DELETE route that deletes by id', async() => {
+    const injectOptions = {
+      method: 'DELETE',
+      url: `/api/delete/${testCar._id}`,
+      payload: JSON.stringify({ make: 'FORD' })
+    };
+    const data = await server.inject(injectOptions);
+    expect(data.statusCode).toBe(200);
+    const payload = await JSON.parse(data.payload);
+    expect(payload.id).toEqual(testCar.id);
+  });
 });

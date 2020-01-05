@@ -1,48 +1,47 @@
 require('dotenv').config();
 require('./lib/utils/connect').connect();
-const Car = require('./lib/models/Car');
-//require('./lib/app').listen('35813', () => console.log('Node listening on port 35813'));
-
 const Hapi = require('hapi');
+// const server = require('./lib/app');
+//require('./lib/app').listen('35813', () => console.log('Node listening on port 35813'));
+const Car = require('./lib/models/Car');
 
-const hserver = new Hapi.server({
-  port: 35813,
+const server = Hapi.server({
+  port: 3333,
   host: 'localhost'
 });
 
-// const server = require('app');
-//app.get('/', (req, res) => res.send('Welcome to the cars database'));
-hserver.route({
+server.route({
   method: 'GET',
   path: '/',
-  handler: async(req, h) => {
+  handler: () => {
     return 'Welcome to the cars database';
   }
 });
 
-hserver.route({
+server.route({
   method: 'GET',
   path: '/api/cars',
-  handler: async(req, h) => {
+  handler: async() => {
     const allCars = await Car.find();
     return allCars;
   }
 });
 
-hserver.route({
+server.route({
   method: 'GET',
-  path: '/api/cars/:id',
-  handler: async(req, h) => {
+  path: '/api/cars/{id}',
+  handler: async req => {
+    //return req.params.id;
     const targetCar = await Car.findById(req.params.id);
     return targetCar;
   }
 });
 
-hserver.route({
+server.route({
   method: 'POST',
   path: '/api/post',
-  handler: async(req, h) => {
-    const { make, model, year } = req.body;
+  handler: async req => {
+    const { make, model, year } = req.payload;
     const createdCar = await Car.create({
       make,
       model,
@@ -52,27 +51,34 @@ hserver.route({
   }
 });
 
-hserver.route({
-  method: 'PUT',
-  path: '/api/put/:id',
-  handler: async(req, h) => {
-    const updatedCar = await Car.findByIdAndUpdate(req.params.id);
+server.route({
+  method: 'PATCH',
+  path: '/api/patch/{id}',
+  handler: async req => {
+    const updatedCar = await Car.findByIdAndUpdate({ _id: req.params.id }, req.payload, { new: true });
     return updatedCar;
   }
 });
 
-hserver.route({
+server.route({
   method: 'DELETE',
-  path: '/api/delete/:id',
-  handler: async(req, h) => {
+  path: '/api/delete/{id}',
+  handler: async req => {
     const deletedCar = await Car.findByIdAndDelete({ _id: req.params.id });
     return deletedCar;
   }
 });
 
-(async() => {
-  await hserver.start();
-  console.log('Server running at:', hserver.info.uri);
-})();
+const init = async() => {
+  await server.start();
+  console.log('Server running at:', server.info.uri);
+};
 
-module.export = hserver;
+process.on('unhandledRejection', (err) => {
+  console.log(err);
+  process.exit(1);
+});
+
+init();
+
+module.exports = server;
